@@ -1,18 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import {
-  Clock,
-  AlertCircle,
-  BellRing,
-  HelpCircle,
-  SlidersHorizontal,
-  UserPlus,
-  Activity,
-  Users,
-} from "lucide-react";
-import { QueueSummaryViewModel } from "@/types/ui";
-import { Button } from "@/components/ui/Button";
+import { Activity, Clock, Plus, SlidersHorizontal } from "lucide-react";
+import type { QueueSummaryViewModel } from "@/types/ui";
 
 export interface QueueHeaderProps {
   summary: QueueSummaryViewModel;
@@ -20,140 +9,49 @@ export interface QueueHeaderProps {
   onOpenIntake: () => void;
 }
 
-export function QueueHeader({
-  summary,
-  onOpenDemoControls,
-  onOpenIntake,
-}: QueueHeaderProps) {
-  const [showTooltip, setShowTooltip] = useState(false);
-
+export function QueueHeader({ summary, onOpenDemoControls, onOpenIntake }: QueueHeaderProps) {
   return (
-    <header
-      role="banner"
-      className="shrink-0 bg-white border-b border-[#DCE5E2] px-6 py-3 flex flex-wrap items-center justify-between gap-4 z-20"
-    >
-      {/* Brand & USP Positioning */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center justify-center w-8 h-8 rounded-md bg-[#123D37] text-white font-bold text-sm tracking-wider shadow-xs">
-          SL
-        </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-base font-bold tracking-tight text-[#132824]">
-              SecondLook
-            </h1>
-            <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 bg-[#EAF0EE] text-[#147D6F] font-semibold rounded-xs">
-              Ops Layer
-            </span>
-          </div>
-          <p className="text-xs text-[#60706C]">
-            Uncertainty-aware patient attention
-          </p>
-        </div>
-      </div>
-
-      {/* Center Operational Metrics */}
-      <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-        {/* Queue Confidence Chip with Tooltip */}
-        <div className="relative">
-          <button
-            type="button"
-            onMouseEnter={() => setShowTooltip(true)}
-            onMouseLeave={() => setShowTooltip(false)}
-            onFocus={() => setShowTooltip(true)}
-            onBlur={() => setShowTooltip(false)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#F4F7F6] border border-[#DCE5E2] hover:border-[#147D6F] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#147D6F]"
-            aria-describedby="queue-confidence-tooltip"
-          >
-            <Activity className="w-3.5 h-3.5 text-[#147D6F]" />
-            <span className="text-xs text-[#60706C]">Queue confidence:</span>
-            <span className="text-xs font-bold font-mono text-[#132824]">
-              {summary.queueConfidence}%
-            </span>
-            <HelpCircle className="w-3 h-3 text-[#A8B6B2] ml-0.5" />
-          </button>
-
-          {showTooltip && (
-            <div
-              id="queue-confidence-tooltip"
-              role="tooltip"
-              className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-72 p-2.5 bg-[#132824] text-white text-[11px] rounded-md shadow-xl z-50 pointer-events-none leading-relaxed"
-            >
-              <div className="font-semibold text-[#86E0CF] mb-1">
-                Operational Stability Index
-              </div>
-              Queue confidence describes the stability of patient placement
-              across tested information scenarios. It is not a measure of
-              clinical safety.
+    <header className="shrink-0 border-b border-[#D8E1DE] bg-white px-4 py-3 md:px-6">
+      <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-3">
+        <div className="mr-auto flex min-w-[250px] items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#123D37] text-sm font-bold text-white">SL</div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-bold tracking-tight text-[#132824]">SecondLook</h1>
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#EAF5F1] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#1D5E4D]">
+                <Activity className="h-3 w-3" /> Local ML
+              </span>
             </div>
-          )}
+            <p className="text-xs text-[#60706C]">Learned queue movement · no external API</p>
+          </div>
         </div>
 
-        {/* Unstable Cases Chip */}
-        <div
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-xs ${
-            summary.unstableCount > 0
-              ? "bg-[#FCEEEC] border-[#F5C2BA] text-[#932C1E]"
-              : "bg-[#F4F7F6] border-[#DCE5E2] text-[#60706C]"
-          }`}
-          title="Cases where placement changes substantially under reasonable alternative scenarios"
-        >
-          <AlertCircle className="w-3.5 h-3.5" />
-          <span className="font-bold font-mono">{summary.unstableCount}</span>
-          <span>unstable</span>
+        <div className="flex items-center gap-2" aria-label="Live queue summary">
+          {summary.modelMode === "local-ml" && <div className="hidden rounded-lg border border-[#C8E5DB] bg-[#EFF8F4] px-3 py-1.5 lg:block" title={`${summary.modelVersion} · held-out synthetic R² ${summary.modelValidationR2}`}>
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-[#56726A]">Model online</div>
+            <div className="font-mono text-xs font-bold text-[#1D5E4D]">RF · R² {summary.modelValidationR2}</div>
+          </div>}
+          <div className="rounded-lg border border-[#D8E1DE] bg-[#F7F9F8] px-3 py-1.5">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-[#71807C]">Queue stability</div>
+            <div className="font-mono text-sm font-bold text-[#132824]">{summary.queueConfidence}%</div>
+          </div>
+          <div className={`rounded-lg border px-3 py-1.5 ${summary.unstableCount > 0 ? "border-[#F0B8AE] bg-[#FFF1EE]" : "border-[#C8E5DB] bg-[#EFF8F4]"}`}>
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-[#71807C]">Needs a second look</div>
+            <div className={`font-mono text-sm font-bold ${summary.unstableCount > 0 ? "text-[#A33A2A]" : "text-[#1D5E4D]"}`}>{summary.unstableCount} cases</div>
+          </div>
+          <div className="hidden items-center gap-1.5 rounded-lg border border-[#D8E1DE] bg-[#F7F9F8] px-3 py-2 font-mono text-xs text-[#132824] sm:flex">
+            <Clock className="h-3.5 w-3.5 text-[#147D6F]" /> {summary.simulatedTime}
+          </div>
         </div>
 
-        {/* Unresolved Updates Chip */}
-        <div
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-xs ${
-            summary.unresolvedUpdateCount > 0
-              ? "bg-[#FDF6E9] border-[#F4DCB0] text-[#87590C]"
-              : "bg-[#F4F7F6] border-[#DCE5E2] text-[#60706C]"
-          }`}
-          title="New clinical notes or telemetry events awaiting attending staff review"
-        >
-          <BellRing className="w-3.5 h-3.5" />
-          <span className="font-bold font-mono">
-            {summary.unresolvedUpdateCount}
-          </span>
-          <span>updates</span>
+        <div className="flex items-center gap-2">
+          <button onClick={onOpenIntake} className="inline-flex items-center gap-1.5 rounded-lg border border-[#B9CAC5] bg-white px-3 py-2 text-xs font-semibold text-[#294740] transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] hover:bg-[#F4F7F6]">
+            <Plus className="h-3.5 w-3.5" /> Add case
+          </button>
+          <button onClick={onOpenDemoControls} className="inline-flex items-center gap-1.5 rounded-lg bg-[#147D6F] px-3 py-2 text-xs font-semibold text-white transition-[transform,background-color] duration-150 ease-out active:scale-[0.97] hover:bg-[#0E6559]">
+            <SlidersHorizontal className="h-3.5 w-3.5" /> Simulation
+          </button>
         </div>
-
-        {/* Total Waiting */}
-        <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[#F4F7F6] border border-[#DCE5E2] text-xs text-[#60706C]">
-          <Users className="w-3.5 h-3.5 text-[#60706C]" />
-          <span className="font-bold font-mono text-[#132824]">
-            {summary.totalWaiting}
-          </span>
-          <span>waiting</span>
-        </div>
-
-        {/* Simulated Time */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[#F4F7F6] border border-[#DCE5E2] text-xs font-mono text-[#132824]">
-          <Clock className="w-3.5 h-3.5 text-[#147D6F]" />
-          <span className="font-bold">{summary.simulatedTime}</span>
-        </div>
-      </div>
-
-      {/* Header Actions: Demo Controls & Intake */}
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onOpenIntake}
-          icon={<UserPlus className="w-3.5 h-3.5" />}
-        >
-          <span>Intake</span>
-        </Button>
-
-        <Button
-          variant="action"
-          size="sm"
-          onClick={onOpenDemoControls}
-          icon={<SlidersHorizontal className="w-3.5 h-3.5" />}
-        >
-          <span>Demo Controls</span>
-        </Button>
       </div>
     </header>
   );

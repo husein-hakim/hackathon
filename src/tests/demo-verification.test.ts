@@ -19,13 +19,17 @@ async function runTests() {
   let store = useSecondLookStore.getState();
 
   assert(store.patients.length === 6, "Initial queue contains exactly 6 fictional cases");
-  assert(store.viewMode === "traditional", "Initial queue starts in Traditional View");
+  assert(store.viewMode === "secondlook", "Initial queue starts in the uncertainty-aware view");
   assert(store.summary.totalWaiting === 6, "Queue summary is derived from waiting cases");
   assert(store.summary.queueConfidence >= 0 && store.summary.queueConfidence <= 100, "Queue confidence is a bounded operational metric");
+  assert(store.summary.modelMode === "local-ml", "A local machine-learning model is running without an API");
+  assert((store.summary.modelValidationR2 ?? 0) > 0.8, "The bundled model passes its held-out synthetic validation threshold");
 
   const p219 = store.patients.find((patient) => patient.displayId === "P-219");
   assert(!!p219, "Primary demo case P-219 exists in queue");
-  assert(p219?.bestPossibleRank === 2 && p219?.worstPossibleRank === 6, "P-219 has a wide #2–#6 range across the six-case queue");
+  assert(p219?.provisionalRank === 3, "P-219 is currently third after local model inference");
+  assert(p219 !== undefined && p219.bestPossibleRank <= p219.provisionalRank && p219.worstPossibleRank >= p219.provisionalRank, "P-219's learned range contains its provisional rank");
+  assert(p219 !== undefined && p219.worstPossibleRank - p219.bestPossibleRank >= 2, "P-219 has a materially wide learned placement range");
   assert(p219?.confidence === "low", "P-219 placement confidence is Low");
   assert(p219?.nextBestInformation?.title === "Refresh the latest observation", "P-219 recommends refreshing the latest observation");
 
@@ -44,8 +48,12 @@ async function runTests() {
   store.actions.resolveUncertainty({ patientId: "pat-219", uncertaintyId: "unc-219-1", value: "Refreshed staff observation", note: "Bedside observation refreshed by triage staff." });
   store = useSecondLookStore.getState();
   const updatedP219 = store.patients.find((patient) => patient.displayId === "P-219");
-  assert(updatedP219?.confidence === "high", "After clarification, P-219 confidence becomes High");
-  assert(updatedP219?.bestPossibleRank === 3 && updatedP219?.worstPossibleRank === 4, "After clarification, P-219 range narrows to #3–#4");
+  assert(
+    updatedP219 !== undefined && p219?.modelUncertaintySpread !== undefined && updatedP219.modelUncertaintySpread !== undefined
+      && updatedP219.modelUncertaintySpread < p219.modelUncertaintySpread,
+    "After clarification, P-219's learned uncertainty decreases",
+  );
+  assert(updatedP219?.confidence !== "low", "After clarification, P-219 is no longer marked unstable");
   assert(store.events[0]?.type === "uncertainty-resolved", "Timeline records the uncertainty resolution");
 
   store.actions.selectPatient("pat-176");
@@ -70,7 +78,8 @@ async function runTests() {
   store.actions.resetDemo();
   store = useSecondLookStore.getState();
   const resetP219 = store.patients.find((patient) => patient.displayId === "P-219");
-  assert(resetP219?.bestPossibleRank === 2 && resetP219?.worstPossibleRank === 6, "Reset restores P-219's initial range");
+  assert(resetP219?.provisionalRank === 3, "Reset restores P-219's inferred position");
+  assert(resetP219?.modelUncertaintySpread === p219?.modelUncertaintySpread, "Reset restores P-219's learned uncertainty");
   assert(resetP219?.confidence === "low", "Reset restores Low confidence");
 
   const prohibitedTerms = [

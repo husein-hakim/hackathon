@@ -1,6 +1,6 @@
 import { processWearableWindow } from "@/engine/wearable-processor";
 import type { SecondLookEngineResult } from "@/engine/secondlook-engine";
-import type { EvidenceItem, PatientCase, TimelineEvent, Uncertainty } from "@/engine/types";
+import type { EvidenceItem, PatientCase, PlacementResult, TimelineEvent, Uncertainty } from "@/engine/types";
 import type { WearableMode as DomainWearableMode, WearableReading } from "@/lib/wearable-simulator";
 import type {
   EvidenceStatus,
@@ -132,7 +132,8 @@ function mapPatient(patient: PatientCase, input: MapperInput): PatientQueueViewM
   const placement = input.engineResult.placements.find((item) => item.patientId === patient.id);
   const recommendation = input.engineResult.recommendations.find((item) => item.patientId === patient.id);
   const uncertainties = quality?.uncertainties ?? [];
-  const safePlacement = placement ?? {
+  const safePlacement: PlacementResult = placement ?? {
+    patientId: patient.id,
     provisionalRank: 0,
     bestPossibleRank: 0,
     worstPossibleRank: 0,
@@ -153,6 +154,7 @@ function mapPatient(patient: PatientCase, input: MapperInput): PatientQueueViewM
   return {
     patientId: toUiPatientId(patient.id),
     displayId: patient.displayId,
+    age: patient.age,
     ageGroup: patient.ageGroup,
     complaint: patient.complaint,
     clinicianCategory: patient.clinicianCategory,
@@ -164,6 +166,9 @@ function mapPatient(patient: PatientCase, input: MapperInput): PatientQueueViewM
     stabilityPercent: safePlacement.stabilityPercent,
     confidence: safePlacement.confidence,
     reasons: safePlacement.reasons,
+    modelFactors: safePlacement.modelFactors ?? [],
+    learnedAdjustment: safePlacement.learnedAdjustment,
+    modelUncertaintySpread: safePlacement.uncertaintySpread,
     hasUnacknowledgedUpdate: patient.evidence.some(
       (item) => !item.acknowledged && Date.parse(item.receivedAt) > Date.parse(patient.lastReviewedAt),
     ),
@@ -199,6 +204,10 @@ export function mapQueueSummary(input: MapperInput): QueueSummaryViewModel {
     ),
     totalWaiting: waiting.length,
     simulatedTime: displayTime(input.simulatedNow),
+    modelMode: input.engineResult.modelInfo?.mode ?? "local-ml",
+    modelVersion: input.engineResult.modelInfo?.version ?? "unknown",
+    modelValidationR2: input.engineResult.modelInfo?.adjustmentR2 ?? 0,
+    modelTrainingData: input.engineResult.modelInfo?.trainingData ?? "unknown",
   };
 }
 

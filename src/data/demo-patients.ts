@@ -36,6 +36,7 @@ export const DEMO_PATIENTS: PatientCase[] = [
   {
     id: "patient-104",
     displayId: "P-104",
+    age: 29,
     ageGroup: "Adult",
     complaint: "Minor hand injury",
     clinicianCategory: 4,
@@ -53,6 +54,7 @@ export const DEMO_PATIENTS: PatientCase[] = [
   {
     id: "patient-219",
     displayId: "P-219",
+    age: 72,
     ageGroup: "Older adult",
     complaint: "Breathing discomfort",
     clinicianCategory: 3,
@@ -72,6 +74,7 @@ export const DEMO_PATIENTS: PatientCase[] = [
   {
     id: "patient-083",
     displayId: "P-083",
+    age: 41,
     ageGroup: "Adult",
     complaint: "Abdominal discomfort",
     clinicianCategory: 3,
@@ -96,6 +99,7 @@ export const DEMO_PATIENTS: PatientCase[] = [
   {
     id: "patient-176",
     displayId: "P-176",
+    age: 24,
     ageGroup: "Young adult",
     complaint: "Dizziness",
     clinicianCategory: 3,
@@ -131,6 +135,7 @@ export const DEMO_PATIENTS: PatientCase[] = [
   {
     id: "patient-301",
     displayId: "P-301",
+    age: 58,
     ageGroup: "Adult",
     complaint: "Persistent weakness",
     clinicianCategory: 4,
@@ -162,6 +167,7 @@ export const DEMO_PATIENTS: PatientCase[] = [
   {
     id: "patient-412",
     displayId: "P-412",
+    age: 36,
     ageGroup: "Adult",
     complaint: "Headache",
     clinicianCategory: 4,

@@ -53,7 +53,7 @@ export function DemoControls({ isOpen, onClose, actions }: DemoControlsProps) {
     });
     showToast({
       type: "success",
-      title: "P-219 Observation Refreshed",
+      title: "New P-219 Observation Received",
       description: "Placement range collapsed to #3–#4 with High confidence.",
     });
   };
@@ -140,7 +140,7 @@ export function DemoControls({ isOpen, onClose, actions }: DemoControlsProps) {
               Select P-219
             </Button>
             <Button variant="action" size="sm" onClick={handleRefreshP219}>
-              Refresh Stale Observation
+              Simulate New Observation
             </Button>
           </div>
         </div>

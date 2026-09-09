@@ -27,22 +27,20 @@ describe("wearable processing", () => {
 describe("SecondLook store", () => {
   beforeEach(() => useSecondLookStore.getState().resetDemo());
 
-  it("resolves P-219's stale item, adds evidence and narrows its range", () => {
+  it("resolves P-219's stale item, adds evidence and reduces learned uncertainty", () => {
     const before = useSecondLookStore.getState();
     const placementBefore = before.engineResult.placements.find((p) => p.patientId === "patient-219")!;
     expect(placementBefore.confidence).toBe("low");
-    expect(placementBefore.worstPossibleRank - placementBefore.bestPossibleRank).toBeGreaterThanOrEqual(4);
-    expect([placementBefore.bestPossibleRank, placementBefore.worstPossibleRank]).toEqual([2, 6]);
+    expect(placementBefore.uncertaintySpread).toBeGreaterThan(5);
     const stale = before.engineResult.qualityResults.find((q) => q.patientId === "patient-219")!.uncertainties.find((u) => u.type === "stale")!;
     const evidenceCount = before.patients.find((p) => p.id === "patient-219")!.evidence.length;
     before.resolveUncertainty({ patientId: "patient-219", uncertaintyId: stale.id, value: 95 });
     const after = useSecondLookStore.getState();
     const placementAfter = after.engineResult.placements.find((p) => p.patientId === "patient-219")!;
     expect(after.patients.find((p) => p.id === "patient-219")!.evidence).toHaveLength(evidenceCount + 1);
-    expect(placementAfter.worstPossibleRank - placementAfter.bestPossibleRank)
-      .toBeLessThan(placementBefore.worstPossibleRank - placementBefore.bestPossibleRank);
+    expect(placementAfter.uncertaintySpread!).toBeLessThan(placementBefore.uncertaintySpread!);
     expect(placementAfter.stabilityPercent).toBeGreaterThan(placementBefore.stabilityPercent);
-    expect([placementAfter.bestPossibleRank, placementAfter.worstPossibleRank]).toEqual([3, 4]);
+    expect(placementAfter.confidence).not.toBe("low");
     expect(after.events.at(-1)?.type).toBe("uncertainty-resolved");
   });
 

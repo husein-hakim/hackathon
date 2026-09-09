@@ -51,7 +51,8 @@ export type PlacementOverride = {
 export type PatientCase = {
   id: string;
   displayId: string;
-  ageGroup: string;
+  age: number;
+  ageGroup?: string;
   complaint: string;
   clinicianCategory: ClinicianCategory;
   arrivalTime: string;
@@ -120,6 +121,9 @@ export type PlacementResult = {
   stabilityPercent: number;
   confidence: "high" | "medium" | "low";
   reasons: string[];
+  learnedAdjustment?: number;
+  uncertaintySpread?: number;
+  modelFactors?: string[];
 };
 
 export type InformationRecommendation = {

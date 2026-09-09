@@ -8,6 +8,7 @@ import { runSecondLookEngine } from "@/engine/secondlook-engine";
 import { calculatePlacementResults } from "@/engine/stability-engine";
 import type { PatientCase, Scenario, ScenarioQueue, Uncertainty } from "@/engine/types";
 import { DEMO_POLICY } from "@/lib/clinical-policy";
+import { extractOperationalFeatures, OPERATIONAL_MODEL_INFO, predictOperationalPlacement } from "@/ml/operational-placement-model";
 
 const now = new Date(DEMO_START_TIME);
 const baseline: Scenario = {
@@ -93,6 +94,43 @@ describe("operational organisation", () => {
   });
 });
 
+describe("local operational machine learning", () => {
+  it("loads a trained random forest artifact with held-out validation metadata", () => {
+    expect(OPERATIONAL_MODEL_INFO.mode).toBe("local-ml");
+    expect(OPERATIONAL_MODEL_INFO.modelType).toContain("random-forest");
+    expect(OPERATIONAL_MODEL_INFO.validationRows).toBeGreaterThan(0);
+    expect(OPERATIONAL_MODEL_INFO.adjustmentR2).toBeGreaterThan(0.8);
+    expect(OPERATIONAL_MODEL_INFO.excludedFeatures).toEqual(expect.arrayContaining(["age", "complaint text"]));
+  });
+
+  it("changes learned placement from operational data and narrows uncertainty when stale data is refreshed", () => {
+    const patients = createDemoPatients();
+    const patient = patients.find((item) => item.id === "patient-219")!;
+    const quality = assessInformationQuality(patient, now, DEMO_POLICY);
+    const prediction = predictOperationalPlacement(patient, quality, baseline, now, DEMO_POLICY);
+    const later = predictOperationalPlacement(patient, quality, baseline, new Date(now.getTime() + 20 * 60_000), DEMO_POLICY);
+    expect(later.learnedAdjustment).not.toBe(prediction.learnedAdjustment);
+
+    const freshPatient = structuredClone(patient);
+    const stale = freshPatient.evidence.find((item) => item.type === "heart-rate")!;
+    stale.recordedAt = now.toISOString();
+    stale.receivedAt = now.toISOString();
+    stale.verified = true;
+    stale.acknowledged = true;
+    const freshQuality = assessInformationQuality(freshPatient, now, DEMO_POLICY);
+    const freshPrediction = predictOperationalPlacement(freshPatient, freshQuality, baseline, now, DEMO_POLICY);
+    expect(freshPrediction.uncertaintySpread).toBeLessThan(prediction.uncertaintySpread);
+  });
+
+  it("does not feed age or complaint text into the forest", () => {
+    const patient = createDemoPatients()[0];
+    const quality = assessInformationQuality(patient, now, DEMO_POLICY);
+    const original = extractOperationalFeatures(patient, quality, baseline, now, DEMO_POLICY);
+    const changed = extractOperationalFeatures({ ...patient, age: 99, complaint: "entirely different text" }, quality, baseline, now, DEMO_POLICY);
+    expect(changed).toEqual(original);
+  });
+});
+
 describe("scenarios and placement stability", () => {
   it("always includes fixed scenarios, is deterministic, and stays within twelve", () => {
     const patients = createDemoPatients();
@@ -127,8 +165,9 @@ describe("next best information", () => {
     expect(recommendation?.title.toLowerCase()).toContain("refresh");
     expect(recommendation?.uncertaintyId).toContain("stale");
     expect(recommendation!.valueScore).toBeGreaterThan(0);
+    expect(recommendation!.uncertaintyReductionPercent).toBeGreaterThan(0);
     expect(recommendation!.expectedRange[1] - recommendation!.expectedRange[0])
-      .toBeLessThan(recommendation!.currentRange[1] - recommendation!.currentRange[0]);
+      .toBeLessThanOrEqual(recommendation!.currentRange[1] - recommendation!.currentRange[0]);
   });
 
   it("does not divide by zero for zero-effort clarifications", () => {

@@ -44,7 +44,7 @@ export type SecondLookStoreActions = {
   overridePlacement(input: { patientId: string; newPosition: number; reason: string }): void;
   addPatient(input: {
     displayId: string;
-    ageGroup: string;
+    age: number;
     complaint: string;
     clinicianCategory: ClinicianCategory;
     arrivalTime: string;
@@ -69,7 +69,7 @@ function initialState(): SecondLookStoreState {
     patients,
     events: createDemoEvents(),
     selectedPatientId: "patient-219",
-    viewMode: "traditional",
+    viewMode: "secondlook",
     unstableOnly: false,
     simulatedNow: DEMO_START_TIME,
     wearableModes: { "patient-176": "motion-artifact", "patient-301": "disconnected" },
@@ -271,7 +271,8 @@ export const useSecondLookStore = create<SecondLookStore>()(persist((set, get) =
     const patient: PatientCase = {
       id: patientId,
       displayId: input.displayId,
-      ageGroup: input.ageGroup,
+      age: input.age,
+      ageGroup: input.age < 18 ? "Child" : input.age >= 65 ? "Older adult" : "Adult",
       complaint: input.complaint,
       clinicianCategory: input.clinicianCategory,
       arrivalTime: input.arrivalTime,
@@ -337,5 +338,6 @@ export const useSecondLookStore = create<SecondLookStore>()(persist((set, get) =
 }), {
   name: "secondlook-fictional-demo-v1",
   storage: createJSONStorage(() => typeof window === "undefined" ? memoryStorage : window.localStorage),
-  version: 1,
+  version: 2,
+  migrate: () => initialState(),
 }));

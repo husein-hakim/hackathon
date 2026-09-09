@@ -87,7 +87,8 @@ export type NextBestInformationViewModel = {
 export type PatientQueueViewModel = {
   patientId: string;
   displayId: string;
-  ageGroup: string;
+  age?: number;
+  ageGroup?: string;
   complaint: string;
 
   clinicianCategory: 1 | 2 | 3 | 4 | 5;
@@ -103,6 +104,9 @@ export type PatientQueueViewModel = {
   confidence: ConfidenceLevel;
 
   reasons: string[];
+  modelFactors?: string[];
+  learnedAdjustment?: number;
+  modelUncertaintySpread?: number;
 
   hasUnacknowledgedUpdate: boolean;
   hasManualConcern: boolean;
@@ -142,6 +146,10 @@ export type QueueSummaryViewModel = {
   unresolvedUpdateCount: number;
   totalWaiting: number;
   simulatedTime: string;
+  modelMode?: "local-ml";
+  modelVersion?: string;
+  modelValidationR2?: number;
+  modelTrainingData?: string;
 };
 
 export type SecondLookViewModel = {
@@ -170,7 +178,7 @@ export type OverridePlacementInput = {
 
 export type AddPatientInput = {
   displayId: string;
-  ageGroup: string;
+  age: number;
   complaint: string;
   clinicianCategory: 1 | 2 | 3 | 4 | 5;
   arrivalTime: string;

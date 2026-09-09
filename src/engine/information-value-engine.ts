@@ -1,7 +1,7 @@
 import { assessInformationQuality } from "@/engine/quality-engine";
-import { buildScenarioQueue } from "@/engine/organisation-engine";
 import { generateScenarios } from "@/engine/scenario-engine";
 import { calculatePlacementResults } from "@/engine/stability-engine";
+import { buildLearnedPlacementQueues } from "@/ml/operational-placement-model";
 import type { ClinicalPolicy } from "@/lib/clinical-policy";
 import type {
   EvidenceItem,
@@ -91,8 +91,15 @@ function placementAfterResolution(
   const patients = allPatients.map((item) => item.id === patient.id ? resolved : item);
   const qualities = patients.map((item) => assessInformationQuality(item, now, policy));
   const scenarios = generateScenarios(patients, qualities, now, policy);
-  const queues = scenarios.map((scenario) => buildScenarioQueue(patients, scenario, now, policy));
-  return calculatePlacementResults(queues[0], queues, qualities).find((item) => item.patientId === patient.id);
+  const learned = buildLearnedPlacementQueues({ patients, qualityResults: qualities, scenarios, now, policy });
+  const placement = calculatePlacementResults(learned.queues[0], learned.queues, qualities)
+    .find((item) => item.patientId === patient.id);
+  const prediction = learned.baselinePredictions.find((item) => item.patientId === patient.id);
+  return placement ? {
+    ...placement,
+    learnedAdjustment: prediction?.learnedAdjustment,
+    uncertaintySpread: prediction?.uncertaintySpread,
+  } : undefined;
 }
 
 export function calculateNextBestInformation(
@@ -112,18 +119,23 @@ export function calculateNextBestInformation(
     const expectedSpan = expectedRange[1] - expectedRange[0];
     const reduction = Math.max(0, currentSpan - expectedSpan);
     const reductionFraction = reduction / Math.max(currentSpan, 1);
+    const currentScoreSpread = currentPlacement.uncertaintySpread ?? 0;
+    const expectedScoreSpread = expected?.uncertaintySpread ?? currentScoreSpread;
+    const scoreSpreadReduction = Math.max(0, currentScoreSpread - expectedScoreSpread);
+    const scoreSpreadReductionFraction = scoreSpreadReduction / Math.max(currentScoreSpread, 1);
+    const combinedReductionPercent = Math.round(Math.max(reductionFraction, scoreSpreadReductionFraction) * 100);
     return {
       patientId: patient.id,
       uncertaintyId: uncertainty.id,
       title: uncertainty.resolutionAction,
-      explanation: reduction > 0
-        ? "This item is currently a major source of uncertainty in the provisional placement."
+      explanation: reduction > 0 || scoreSpreadReduction > 0.25
+        ? "The local model expects this item to reduce uncertainty in the provisional placement."
         : "This clarification preserves an auditable operational record even if the current range is unchanged.",
       currentRange: [currentPlacement.bestPossibleRank, currentPlacement.worstPossibleRank] as [number, number],
       expectedRange,
       estimatedSeconds: uncertainty.estimatedResolutionSeconds,
-      uncertaintyReductionPercent: Math.round(reductionFraction * 100),
-      valueScore: Number(((reductionFraction * 100) / Math.max(uncertainty.estimatedResolutionSeconds, 1)).toFixed(2)),
+      uncertaintyReductionPercent: combinedReductionPercent,
+      valueScore: Number((((reductionFraction * 100) + (scoreSpreadReductionFraction * 60)) / Math.max(uncertainty.estimatedResolutionSeconds, 1)).toFixed(2)),
     } satisfies InformationRecommendation;
   });
 

@@ -20,7 +20,7 @@ export function IntakeDrawer({
   simulatedTime,
 }: IntakeDrawerProps) {
   const [displayId, setDisplayId] = useState("P-501");
-  const [ageGroup, setAgeGroup] = useState("Adult");
+  const [age, setAge] = useState(40);
   const [complaint, setComplaint] = useState("");
   const [clinicianCategory, setClinicianCategory] = useState<1 | 2 | 3 | 4 | 5>(3);
   const [manualConcern, setManualConcern] = useState(false);
@@ -33,7 +33,7 @@ export function IntakeDrawer({
 
     onAddPatient({
       displayId: displayId.trim() || `P-${Math.floor(500 + Math.random() * 400)}`,
-      ageGroup,
+      age,
       complaint: complaint.trim(),
       clinicianCategory,
       arrivalTime: simulatedTime,
@@ -58,7 +58,7 @@ export function IntakeDrawer({
       width="max-w-md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Anonymous ID & Age Group */}
+        {/* Anonymous ID & Age */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label
@@ -81,19 +81,18 @@ export function IntakeDrawer({
               htmlFor="intake-age"
               className="text-xs font-semibold text-[#132824] block mb-1"
             >
-              Age Cohort
+              Age
             </label>
-            <select
+            <input
               id="intake-age"
-              value={ageGroup}
-              onChange={(e) => setAgeGroup(e.target.value)}
+              type="number"
+              min={0}
+              max={120}
+              required
+              value={age}
+              onChange={(e) => setAge(Math.max(0, Math.min(120, Number(e.target.value))))}
               className="w-full text-xs px-3 py-2 border border-[#DCE5E2] rounded-md bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#147D6F]"
-            >
-              <option value="Young adult">Young adult</option>
-              <option value="Adult">Adult</option>
-              <option value="Older adult">Older adult</option>
-              <option value="Paediatric">Paediatric</option>
-            </select>
+            />
           </div>
         </div>
 

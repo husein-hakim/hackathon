@@ -10,7 +10,7 @@ export function SafetyFooter() {
       <div className="flex items-center gap-2">
         <ShieldAlert className="w-4 h-4 text-[#147D6F] shrink-0" />
         <p className="font-medium text-[#132824]">
-          Operational decision-support layer • Fictional and anonymised patient data.
+          Local random-forest prototype • Trained on synthetic operational scenarios, not patient outcomes.
         </p>
       </div>
 
